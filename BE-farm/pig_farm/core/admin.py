@@ -1,7 +1,21 @@
+from wagtail_modeladmin.helpers import PermissionHelper
 from wagtail_modeladmin.options import ModelAdmin, modeladmin_register
 from django.utils.html import format_html
-from django.utils.safestring import mark_safe
 from . import sql_models
+
+
+class NoDeletePermissionHelper(PermissionHelper):
+    """Permission helper that disables all delete actions in the UI."""
+
+    def user_can_delete_obj(self, user, obj=None):
+        return False
+
+    def user_can_delete(self, user):
+        return False
+
+    def user_can_bulk_delete(self, user):
+        return False
+
 
 class MedicineAdmin(ModelAdmin):
     model = sql_models.Medicine
@@ -11,6 +25,7 @@ class MedicineAdmin(ModelAdmin):
     list_filter = ("is_published", "is_deleted", "updated_at")
     search_fields = ("name", "packaging")
     ordering = ("-updated_at",)
+    permission_helper_class = NoDeletePermissionHelper
     
     def get_queryset(self, request):
         """Chỉ hiển thị các bản ghi chưa bị soft delete cho admin thường"""
@@ -21,7 +36,7 @@ class MedicineAdmin(ModelAdmin):
         # Admin thường chỉ thấy bản ghi chưa delete
         return qs.filter(is_deleted=False)
     
-    def has_delete_permission(self, request):
+    def has_delete_permission(self, request, obj=None):
         """⛔ CHẶN TẤT CẢ USERS (kể cả superuser) - chỉ dev có thể xóa trong database"""
         return False
     
@@ -51,6 +66,7 @@ class PigAdmin(ModelAdmin):
     list_filter = ("is_published", "is_deleted", "updated_at")
     search_fields = ("name",)
     ordering = ("-updated_at",)
+    permission_helper_class = NoDeletePermissionHelper
     
     def get_queryset(self, request):
         """Chỉ hiển thị các bản ghi chưa bị soft delete cho admin thường"""
@@ -59,7 +75,7 @@ class PigAdmin(ModelAdmin):
             return qs
         return qs.filter(is_deleted=False)
     
-    def has_delete_permission(self, request):
+    def has_delete_permission(self, request, obj=None):
         """⛔ CHẶN TẤT CẢ USERS (kể cả superuser) - chỉ dev có thể xóa trong database"""
         return False
     
@@ -87,6 +103,7 @@ class PigImageAdmin(ModelAdmin):
     list_filter = ("image_type", "is_published", "is_deleted", "updated_at")
     search_fields = ("title", "description")
     ordering = ("-updated_at",)
+    permission_helper_class = NoDeletePermissionHelper
     
     def get_queryset(self, request):
         """Chỉ hiển thị các bản ghi chưa bị soft delete cho admin thường"""
@@ -95,7 +112,7 @@ class PigImageAdmin(ModelAdmin):
             return qs
         return qs.filter(is_deleted=False)
     
-    def has_delete_permission(self, request):
+    def has_delete_permission(self, request, obj=None):
         """⛔ CHẶN TẤT CẢ USERS (kể cả superuser) - chỉ dev có thể xóa trong database"""
         return False
     
@@ -166,6 +183,7 @@ class NewsCategoryAdmin(ModelAdmin):
     list_filter = ("is_published", "is_deleted", "parent_id", "updated_at")
     search_fields = ("name", "description", "slug")
     ordering = ("sort_order", "name")
+    permission_helper_class = NoDeletePermissionHelper
     
     def get_queryset(self, request):
         """Chỉ hiển thị các bản ghi chưa bị soft delete cho admin thường"""
@@ -174,7 +192,7 @@ class NewsCategoryAdmin(ModelAdmin):
             return qs
         return qs.filter(is_deleted=False)
     
-    def has_delete_permission(self, request):
+    def has_delete_permission(self, request, obj=None):
         """⛔ CHẶN TẤT CẢ USERS (kể cả superuser) - chỉ dev có thể xóa trong database"""
         return False
     
