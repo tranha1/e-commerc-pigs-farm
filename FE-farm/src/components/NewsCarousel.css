@@ -1,0 +1,21 @@
+/* Custom styles for News Carousel */
+.news-carousel .swiper-pagination {
+  bottom: 0 !important;
+}
+
+.news-carousel .swiper-pagination-bullet {
+  background: hsl(var(--muted-foreground));
+  opacity: 0.3;
+  width: 8px;
+  height: 8px;
+}
+
+.news-carousel .swiper-pagination-bullet-active {
+  background: hsl(var(--primary));
+  opacity: 1;
+}
+
+.news-carousel .swiper-pagination-bullet-active-main {
+  background: hsl(var(--primary));
+  opacity: 1;
+}
