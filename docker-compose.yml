@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: pig_farm_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: pig_farm_db
+      POSTGRES_USER: pig_farm_user
+      POSTGRES_PASSWORD: pig_farm_password
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./BE-farm/CSDL/Sql:/docker-entrypoint-initdb.d/
+    ports:
+      - "5432:5432"
+    networks:
+      - pig_farm_network
+
+  # Django Backend
+  backend:
+    build:
+      context: ./BE-farm/pig_farm
+      dockerfile: Dockerfile
+    container_name: pig_farm_backend
+    restart: unless-stopped
+    environment:
+      - DEBUG=False
+      - DATABASE_URL=postgresql://pig_farm_user:pig_farm_password@db:5432/pig_farm_db
+      - ALLOWED_HOSTS=localhost,127.0.0.1,backend,frontend
+      - SECRET_KEY=your-secret-key-here-change-in-production
+      - CORS_ALLOWED_ORIGINS=http://localhost:8080,http://127.0.0.1:8080,http://frontend
+    volumes:
+      - ./BE-farm/pig_farm:/app
+      - media_files:/app/media
+      - static_files:/app/staticfiles
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    networks:
+      - pig_farm_network
+    command: >
+      sh -c "python manage.py wait_for_db &&
+             python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput --clear &&
+             python manage.py create_initial_data &&
+             gunicorn pig_farm.wsgi:application --bind 0.0.0.0:8000 --workers 3"
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./FE-farm
+      dockerfile: Dockerfile
+    container_name: pig_farm_frontend
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - pig_farm_network
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+
+  # Redis (for caching and sessions)
+  redis:
+    image: redis:7-alpine
+    container_name: pig_farm_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - pig_farm_network
+
+volumes:
+  postgres_data:
+  redis_data:
+  media_files:
+  static_files:
+
+networks:
+  pig_farm_network:
+    driver: bridge
